@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Finans Servisi</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        .form-group { margin-bottom: 15px; }
+        input, button { margin: 5px; padding: 5px; }
+        .result { margin-top: 10px; padding: 10px; background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h2>Döviz Çevirici</h2>
+    <div class="form-group">
+        <form id="exchangeForm">
+            <input type="text" id="fromCurrency" placeholder="Kaynak Döviz (USD)" required>
+            <input type="text" id="toCurrency" placeholder="Hedef Döviz (EUR)" required>
+            <input type="date" id="exchangeDate" required>
+            <button type="submit">Döviz Kuru Getir</button>
+        </form>
+        <div id="exchangeResult" class="result"></div>
+    </div>
+
+    <h2>Hisse Senedi Fiyatı</h2>
+    <div class="form-group">
+        <form id="stockForm">
+            <input type="text" id="stockSymbol" placeholder="Hisse Kodu (AAPL)" required>
+            <input type="text" id="currency" placeholder="Döviz Cinsi (USD)" required>
+            <input type="date" id="stockDate" required>
+            <button type="submit">Fiyat Getir</button>
+        </form>
+        <div id="stockResult" class="result"></div>
+    </div>
+
+    <h2>Toplu Hisse Senedi Fiyatları</h2>
+    <div class="form-group">
+        <form id="bulkStockForm">
+            <input type="text" id="bulkStockSymbols" placeholder="Hisse Kodları (AAPL,GOOGL,MSFT)" required>
+            <input type="text" id="bulkCurrency" placeholder="Döviz Cinsi (USD)" required>
+            <input type="date" id="bulkDate" required>
+            <button type="submit">Fiyatları Getir</button>
+        </form>
+        <div id="bulkResult" class="result"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#exchangeForm').submit(function(e) {
+                e.preventDefault();
+                $.get('/api/finance/exchange-rate', {
+                    fromCurrency: $('#fromCurrency').val(),
+                    toCurrency: $('#toCurrency').val(),
+                    date: $('#exchangeDate').val()
+                }, function(data) {
+                    $('#exchangeResult').text('Kur: ' + data);
+                });
+            });
+
+            $('#stockForm').submit(function(e) {
+                e.preventDefault();
+                $.get('/api/finance/stock-price', {
+                    symbol: $('#stockSymbol').val(),
+                    currency: $('#currency').val(),
+                    date: $('#stockDate').val()
+                }, function(data) {
+                    $('#stockResult').text('Fiyat: ' + data);
+                });
+            });
+
+            $('#bulkStockForm').submit(function(e) {
+                e.preventDefault();
+                var symbols = $('#bulkStockSymbols').val().split(',');
+                $.ajax({
+                    url: '/api/finance/bulk-stock-prices',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        stockSymbols: symbols,
+                        currency: $('#bulkCurrency').val(),
+                        date: $('#bulkDate').val()
+                    }),
+                    success: function(data) {
+                        var result = '';
+                        for (var symbol in data) {
+                            result += symbol + ': ' + data[symbol] + '<br>';
+                        }
+                        $('#bulkResult').html(result);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
