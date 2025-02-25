@@ -1,76 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Finans Servisi</title>
+    <title>Finans ve Portfolio Yönetimi</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        body { margin: 20px; font-family: Arial, sans-serif; }
-        .form-group { margin-bottom: 15px; }
-        input, button { margin: 5px; padding: 5px; }
-        .result { margin-top: 10px; padding: 10px; background-color: #f0f0f0; }
+        .container { padding: 20px; }
+        .section { margin-bottom: 30px; }
+        .form-group { margin: 15px 0; }
+        .result { margin-top: 10px; padding: 10px; background: #f0f0f0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+        input, select { margin: 5px; padding: 5px; }
+        button { padding: 5px 10px; margin: 5px; }
     </style>
 </head>
 <body>
-    <h2>Döviz Çevirici</h2>
-    <div class="form-group">
-        <form id="exchangeForm">
-            <input type="text" id="fromCurrency" placeholder="Kaynak Döviz (USD)" required>
-            <input type="text" id="toCurrency" placeholder="Hedef Döviz (EUR)" required>
-            <input type="date" id="exchangeDate" required>
-            <button type="submit">Döviz Kuru Getir</button>
-        </form>
-        <div id="exchangeResult" class="result"></div>
-    </div>
+    <div class="container">
+        <h1>Finans ve Portfolio Yönetimi</h1>
 
-    <h2>Hisse Senedi Fiyatı</h2>
-    <div class="form-group">
-        <form id="stockForm">
-            <input type="text" id="stockSymbol" placeholder="Hisse Kodu (AAPL)" required>
-            <input type="text" id="currency" placeholder="Döviz Cinsi (USD)" required>
-            <input type="date" id="stockDate" required>
-            <button type="submit">Fiyat Getir</button>
-        </form>
-        <div id="stockResult" class="result"></div>
-    </div>
+        <!-- Döviz Çevirme Bölümü -->
+        <div class="section">
+            <h2>Döviz Çevirme</h2>
+            <form id="exchangeRateForm">
+                <input type="text" id="fromCurrency" placeholder="Kaynak Döviz (USD)" required>
+                <input type="text" id="toCurrency" placeholder="Hedef Döviz (TRY)" required>
+                <input type="date" id="exchangeDate" required>
+                <button type="submit">Döviz Kurunu Getir</button>
+            </form>
+            <div id="exchangeRateResult" class="result"></div>
+        </div>
 
-    <h2>Toplu Hisse Senedi Fiyatları</h2>
-    <div class="form-group">
-        <form id="bulkStockForm">
-            <input type="text" id="bulkStockSymbols" placeholder="Hisse Kodları (AAPL,GOOGL,MSFT)" required>
-            <input type="text" id="bulkCurrency" placeholder="Döviz Cinsi (USD)" required>
-            <input type="date" id="bulkDate" required>
-            <button type="submit">Fiyatları Getir</button>
-        </form>
-        <div id="bulkResult" class="result"></div>
+        <!-- Tek Hisse Senedi Fiyatı -->
+        <div class="section">
+            <h2>Hisse Senedi Fiyatı</h2>
+            <form id="stockPriceForm">
+                <input type="text" id="stockSymbol" placeholder="Hisse Kodu (AAPL)" required>
+                <input type="text" id="stockCurrency" placeholder="Para Birimi (USD)" required>
+                <input type="date" id="stockDate" required>
+                <button type="submit">Fiyat Getir</button>
+            </form>
+            <div id="stockPriceResult" class="result"></div>
+        </div>
+
+        <!-- Toplu Hisse Senedi Fiyatları -->
+        <div class="section">
+            <h2>Toplu Hisse Fiyatları</h2>
+            <form id="bulkStockForm">
+                <textarea id="bulkSymbols" placeholder="Hisse Kodları (Her satıra bir tane)" rows="4"></textarea>
+                <input type="text" id="bulkCurrency" placeholder="Para Birimi (USD)" required>
+                <input type="date" id="bulkDate" required>
+                <button type="submit">Toplu Fiyat Getir</button>
+            </form>
+            <div id="bulkStockResult" class="result"></div>
+        </div>
+
+        <!-- Portfolio İşlemleri -->
+        <div class="section">
+            <h2>Portfolio İşlemleri</h2>
+            <form id="createPortfolioForm">
+                <input type="text" id="createUserId" placeholder="Kullanıcı ID" required>
+                <button type="submit">Portfolio Oluştur</button>
+            </form>
+            <div id="createPortfolioResult" class="result"></div>
+
+            <form id="portfolioManagementForm">
+                <input type="text" id="userId" placeholder="Kullanıcı ID" required>
+                <input type="text" id="addStockSymbol" placeholder="Hisse Kodu (AAPL)" required>
+                <input type="number" id="quantity" placeholder="Adet" required min="1">
+                <button type="submit">Hisse Ekle</button>
+            </form>
+            <div id="portfolioManagementResult" class="result"></div>
+        </div>
+
+        <!-- Portfolio Geçmişi -->
+        <div class="section">
+            <h2>Portfolio Geçmişi</h2>
+            <form id="portfolioHistoryForm">
+                <input type="text" id="historyUserId" placeholder="Kullanıcı ID" required>
+                <input type="date" id="startDate" required>
+                <input type="date" id="endDate" required>
+                <button type="submit">Geçmişi Getir</button>
+            </form>
+            <div id="portfolioHistoryResult" class="result"></div>
+        </div>
     </div>
 
     <script>
         $(document).ready(function() {
-            $('#exchangeForm').submit(function(e) {
+            // Döviz kuru
+            $('#exchangeRateForm').submit(function(e) {
                 e.preventDefault();
                 $.get('/api/finance/exchange-rate', {
                     fromCurrency: $('#fromCurrency').val(),
                     toCurrency: $('#toCurrency').val(),
                     date: $('#exchangeDate').val()
-                }, function(data) {
-                    $('#exchangeResult').text('Kur: ' + data);
+                })
+                .done(function(result) {
+                    $('#exchangeRateResult').html('Döviz Kuru: ' + result);
+                })
+                .fail(function(err) {
+                    $('#exchangeRateResult').text('Hata: ' + err.responseText);
                 });
             });
 
-            $('#stockForm').submit(function(e) {
+            // Tek hisse fiyatı
+            $('#stockPriceForm').submit(function(e) {
                 e.preventDefault();
                 $.get('/api/finance/stock-price', {
                     symbol: $('#stockSymbol').val(),
-                    currency: $('#currency').val(),
+                    currency: $('#stockCurrency').val(),
                     date: $('#stockDate').val()
-                }, function(data) {
-                    $('#stockResult').text('Fiyat: ' + data);
+                })
+                .done(function(result) {
+                    $('#stockPriceResult').html('Hisse Fiyatı: ' + result);
+                })
+                .fail(function(err) {
+                    $('#stockPriceResult').text('Hata: ' + err.responseText);
                 });
             });
 
+            // Toplu hisse fiyatları
             $('#bulkStockForm').submit(function(e) {
                 e.preventDefault();
-                var symbols = $('#bulkStockSymbols').val().split(',');
+                const symbols = $('#bulkSymbols').val().split('\n').filter(s => s.trim());
                 $.ajax({
                     url: '/api/finance/bulk-stock-prices',
                     type: 'POST',
@@ -80,13 +132,75 @@
                         currency: $('#bulkCurrency').val(),
                         date: $('#bulkDate').val()
                     }),
-                    success: function(data) {
-                        var result = '';
-                        for (var symbol in data) {
-                            result += symbol + ': ' + data[symbol] + '<br>';
+                    success: function(result) {
+                        let html = '<table><tr><th>Hisse</th><th>Fiyat</th></tr>';
+                        for (const [symbol, price] of Object.entries(result)) {
+                            html += `<tr><td>${symbol}</td><td>${price}</td></tr>`;
                         }
-                        $('#bulkResult').html(result);
+                        html += '</table>';
+                        $('#bulkStockResult').html(html);
+                    },
+                    error: function(err) {
+                        $('#bulkStockResult').text('Hata: ' + err.responseText);
                     }
+                });
+            });
+
+            // Portfolio işlemleri
+            $('#createPortfolioForm').submit(function(e) {
+                e.preventDefault();
+                $.post('/api/portfolio/create', {
+                    userId: $('#createUserId').val()
+                })
+                .done(function() {
+                    $('#createPortfolioResult').html('Portfolio başarıyla oluşturuldu!');
+                })
+                .fail(function(err) {
+                    $('#createPortfolioResult').text('Hata: ' + err.responseText);
+                });
+            });
+
+            $('#portfolioManagementForm').submit(function(e) {
+                e.preventDefault();
+                $.post('/api/portfolio/add-stock', {
+                    userId: $('#userId').val(),
+                    symbol: $('#addStockSymbol').val(),
+                    quantity: $('#quantity').val()
+                })
+                .done(function() {
+                    $('#portfolioManagementResult').html('Hisse başarıyla eklendi!');
+                })
+                .fail(function(err) {
+                    $('#portfolioManagementResult').text('Hata: ' + err.responseText);
+                });
+            });
+
+            // Portfolio geçmişi
+            $('#portfolioHistoryForm').submit(function(e) {
+                e.preventDefault();
+                $.get('/api/portfolio/history', {
+                    userId: $('#historyUserId').val(),
+                    startDate: $('#startDate').val(),
+                    endDate: $('#endDate').val()
+                })
+                .done(function(result) {
+                    let html = '<table><tr><th>Tarih</th><th>Hisse</th><th>Fiyat</th><th>Adet</th><th>Toplam</th></tr>';
+                    for (const [date, stocks] of Object.entries(result)) {
+                        for (const [symbol, details] of Object.entries(stocks)) {
+                            html += `<tr>
+                                <td>${date}</td>
+                                <td>${symbol}</td>
+                                <td>${details.pricePerShare}</td>
+                                <td>${details.quantity}</td>
+                                <td>${details.totalValue}</td>
+                            </tr>`;
+                        }
+                    }
+                    html += '</table>';
+                    $('#portfolioHistoryResult').html(html);
+                })
+                .fail(function(err) {
+                    $('#portfolioHistoryResult').text('Hata: ' + err.responseText);
                 });
             });
         });
