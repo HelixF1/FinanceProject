@@ -1,8 +1,8 @@
-package com.example.demo.service;
+package com.example.demo.controller;
 
 import org.junit.jupiter.api.Test;
 
-class PortfolioServiceTest {
+class PortfolioControllerTest {
     
     @Test
     void dummyTest() {

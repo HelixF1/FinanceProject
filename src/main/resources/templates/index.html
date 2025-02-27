@@ -185,17 +185,15 @@
                 })
                 .done(function(result) {
                     let html = '<table><tr><th>Tarih</th><th>Hisse</th><th>Fiyat</th><th>Adet</th><th>Toplam</th></tr>';
-                    for (const [date, stocks] of Object.entries(result)) {
-                        for (const [symbol, details] of Object.entries(stocks)) {
-                            html += `<tr>
-                                <td>${date}</td>
-                                <td>${symbol}</td>
-                                <td>${details.pricePerShare}</td>
-                                <td>${details.quantity}</td>
-                                <td>${details.totalValue}</td>
-                            </tr>`;
-                        }
-                    }
+                    result.forEach(function(item) {
+                        html += `<tr>
+                            <td>${item.Tarih}</td>
+                            <td>${item.Hisse}</td>
+                            <td>${item.Fiyat}</td>
+                            <td>${item.Adet}</td>
+                            <td>${item.Toplam}</td>
+                        </tr>`;
+                    });
                     html += '</table>';
                     $('#portfolioHistoryResult').html(html);
                 })

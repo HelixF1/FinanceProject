@@ -8,11 +8,9 @@ import java.util.List;
 
 @Repository
 public interface StockHistoryRepository extends JpaRepository<StockHistory, Long> {
-    List<StockHistory> findBySymbolOrderByDateAsc(String symbol);
-    List<StockHistory> findByDateBetweenAndSymbolInOrderByDateAsc(
+    List<StockHistory> findBySymbolInAndDateBetweenOrderByDateAsc(
+        List<String> symbols, 
         LocalDate startDate, 
-        LocalDate endDate, 
-        List<String> symbols
+        LocalDate endDate
     );
-    StockHistory findBySymbolAndDate(String symbol, LocalDate date);
 } 

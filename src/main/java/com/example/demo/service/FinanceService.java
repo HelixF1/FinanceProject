@@ -74,21 +74,13 @@ public class FinanceService {
     }
 
     // Şimdilik test için rastgele fiyatlar üretiyoruz
-    public Double getStockPrice(String symbol, String currency, LocalDate date) {
-        // Cache key oluştur
-        String cacheKey = symbol + "_" + currency + "_" + date;
-        
-        // Cache'de varsa, cache'den döndür
-        if (priceCache.containsKey(cacheKey)) {
-            logger.info("Returning cached price for {}", cacheKey);
-            return priceCache.get(cacheKey);
-        }
-
+    public double getStockPrice(String symbol, String currency, LocalDate date) {
         try {
             String url = String.format("/query?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",
-                symbol.toUpperCase(), stockApiKey);
-                
-            logger.info("Calling stock API with URL: {}", url);
+                symbol,
+                stockApiKey.trim());
+            
+            logger.info("Calling Alpha Vantage API with URL: {}", url);
             
             String response = stockWebClient.get()
                     .uri(url)
@@ -99,35 +91,51 @@ public class FinanceService {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode json = mapper.readTree(response);
             
+            double price;
             if (json.has("Global Quote")) {
-                Double priceInUSD = json.get("Global Quote").get("05. price").asDouble();
-                Double price = priceInUSD;
-                
-                if (!currency.equalsIgnoreCase("USD")) {
-                    Double exchangeRate = getExchangeRate("USD", currency, date);
-                    price = priceInUSD * exchangeRate;
+                JsonNode quote = json.get("Global Quote");
+                if (quote.has("05. price")) {
+                    price = Double.parseDouble(quote.get("05. price").asText());
+                } else {
+                    // API'den fiyat alınamazsa test verilerini kullan
+                    price = switch(symbol.toUpperCase()) {
+                        case "AAPL" -> 175.50;
+                        case "TSLA" -> 180.25;
+                        case "NVDA" -> 785.40;
+                        case "GOOGL" -> 138.75;
+                        case "MSFT" -> 406.50;
+                        default -> 100.00;
+                    };
                 }
-                
-                // Sonucu cache'e kaydet
-                priceCache.put(cacheKey, price);
-                return price;
             } else {
-                // API limit aşıldıysa test verilerini kullan
-                if (response.contains("rate limit")) {
-                    Double testPrice = getTestPrice(symbol, currency);
-                    priceCache.put(cacheKey, testPrice);
-                    return testPrice;
+                // API yanıt vermezse test verilerini kullan
+                price = switch(symbol.toUpperCase()) {
+                    case "AAPL" -> 175.50;
+                    case "TSLA" -> 180.25;
+                    case "NVDA" -> 785.40;
+                    case "GOOGL" -> 138.75;
+                    case "MSFT" -> 406.50;
+                    default -> 100.00;
+                };
+            }
+            
+            // Para birimi dönüşümü (hem gerçek hem test verileri için)
+            if (!currency.equalsIgnoreCase("USD")) {
+                try {
+                    Double exchangeRate = getExchangeRate("USD", currency, date);
+                    price *= exchangeRate;
+                    logger.info("Converted price from USD to {}: {} * {} = {}", 
+                        currency, price/exchangeRate, exchangeRate, price);
+                } catch (Exception e) {
+                    logger.error("Error converting currency: {}", e.getMessage());
+                    throw e;
                 }
-                throw new RuntimeException("Invalid API response: " + response);
             }
+            
+            return Math.round(price * 100.0) / 100.0; // 2 ondalık basamağa yuvarla
+            
         } catch (Exception e) {
-            logger.error("Error getting stock price: ", e);
-            // API limit aşıldığında test verileri döndür
-            if (e.getMessage().contains("rate limit")) {
-                Double testPrice = getTestPrice(symbol, currency);
-                priceCache.put(cacheKey, testPrice);
-                return testPrice;
-            }
+            logger.error("Error in getStockPrice: {}", e.getMessage());
             throw new RuntimeException("Error getting stock price: " + e.getMessage());
         }
     }

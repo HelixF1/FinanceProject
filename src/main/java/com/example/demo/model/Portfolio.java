@@ -2,6 +2,7 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "portfolios")
@@ -13,8 +14,8 @@ public class Portfolio {
     @Column(unique = true)
     private String userId;
     
-    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<PortfolioStock> stocks;
+    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PortfolioStock> stocks = new ArrayList<>();
 
     // Getters and Setters
     public Long getId() {

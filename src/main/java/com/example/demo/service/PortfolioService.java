@@ -1,18 +1,20 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.StockHistoryDTO;
 import com.example.demo.model.Portfolio;
 import com.example.demo.model.PortfolioStock;
 import com.example.demo.model.StockHistory;
 import com.example.demo.repository.PortfolioRepository;
 import com.example.demo.repository.StockHistoryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class PortfolioService {
@@ -27,180 +29,140 @@ public class PortfolioService {
     
     @Autowired
     private FinanceService financeService;
-    
+
+    // Portfolio oluşturma
     public Portfolio createPortfolio(String userId) {
-        // findByUserId yerine findFirstByUserId kullan
-        Optional<Portfolio> existingPortfolio = portfolioRepository.findFirstByUserId(userId);
-        if (existingPortfolio.isPresent()) {
-            throw new RuntimeException("Portfolio already exists for user: " + userId);
-        }
-        
         Portfolio portfolio = new Portfolio();
         portfolio.setUserId(userId);
         portfolio.setStocks(new ArrayList<>());
         return portfolioRepository.save(portfolio);
     }
-    
+
+    // Portfolyoya hisse ekleme
     public void addStockToPortfolio(String userId, String symbol, int quantity) {
         Portfolio portfolio = findPortfolioByUserId(userId);
-
+        
+        // Eğer hisse zaten varsa miktarını güncelle
         Optional<PortfolioStock> existingStock = portfolio.getStocks().stream()
             .filter(s -> s.getSymbol().equals(symbol))
             .findFirst();
-
+            
         if (existingStock.isPresent()) {
             existingStock.get().setQuantity(existingStock.get().getQuantity() + quantity);
         } else {
-            PortfolioStock stock = new PortfolioStock();
-            stock.setPortfolio(portfolio);
-            stock.setSymbol(symbol);
-            stock.setQuantity(quantity);
-            stock.setPurchaseDate(LocalDate.now());
-            portfolio.getStocks().add(stock);
+            // Yeni hisse ekle
+            PortfolioStock newStock = new PortfolioStock();
+            newStock.setSymbol(symbol);
+            newStock.setQuantity(quantity);
+            newStock.setPortfolio(portfolio);
+            portfolio.getStocks().add(newStock);
         }
         
         portfolioRepository.save(portfolio);
-        updateStockPrice(symbol, LocalDate.now());
-    }
-    
-    @Scheduled(cron = "0 0 18 * * *")
-    public void updateDailyPrices() {
-        logger.info("Updating daily prices for all portfolios");
-        LocalDate today = LocalDate.now();
         
-        portfolioRepository.findAll().stream()
-            .flatMap(portfolio -> portfolio.getStocks().stream())
-            .map(PortfolioStock::getSymbol)
-            .distinct()
-            .forEach(symbol -> updateStockPrice(symbol, today));
-    }
-    
-    public Map<LocalDate, Map<String, Map<String, Object>>> getPortfolioHistory(String userId, LocalDate startDate, LocalDate endDate) {
-        logger.info("Getting history for user {} from {} to {}", userId, startDate, endDate);
-        
-        Portfolio portfolio = portfolioRepository.findFirstByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Portfolio not found"));
-            
-        Map<String, Integer> quantities = new HashMap<>();
-        for (PortfolioStock stock : portfolio.getStocks()) {
-            quantities.put(stock.getSymbol(), stock.getQuantity());
-        }
-        
-        List<StockHistory> history = stockHistoryRepository.findByDateBetweenAndSymbolInOrderByDateAsc(
-            startDate, endDate, new ArrayList<>(quantities.keySet()));
-        
-        Map<LocalDate, Map<String, Map<String, Object>>> result = new TreeMap<>();
-        
-        for (StockHistory sh : history) {
-            Map<String, Object> stockDetails = new HashMap<>();
-            int quantity = quantities.get(sh.getSymbol());
-            double pricePerShare = sh.getPrice();
-            double totalValue = pricePerShare * quantity;
-            
-            stockDetails.put("pricePerShare", pricePerShare);
-            stockDetails.put("quantity", quantity);
-            stockDetails.put("totalValue", totalValue);
-            
-            result.computeIfAbsent(sh.getDate(), k -> new HashMap<>())
-                .put(sh.getSymbol(), stockDetails);
-        }
-        
-        return result;
-    }
-    
-    public Map<LocalDate, Double> getPortfolioTotalHistory(String userId, LocalDate startDate, LocalDate endDate) {
-        Map<LocalDate, Map<String, Map<String, Object>>> history = getPortfolioHistory(userId, startDate, endDate);
-        
-        return history.entrySet().stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                e -> e.getValue().values().stream()
-                    .mapToDouble(details -> (double) details.get("totalValue"))
-                    .sum()
-            ));
+        // Hisse eklendiğinde ilk fiyat kaydını al
+        updateSingleStockPrice(symbol);
     }
 
-    public List<String> getUserStocks(String userId) {
-        Portfolio portfolio = portfolioRepository.findFirstByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Portfolio not found"));
-        
-        return portfolio.getStocks().stream()
-            .map(PortfolioStock::getSymbol)
-            .collect(Collectors.toList());
-    }
-
-    public Map<LocalDate, Map<String, Object>> getStockDetailHistory(String userId, String symbol) {
-        Portfolio portfolio = findPortfolioByUserId(userId);
-        
-        PortfolioStock stock = portfolio.getStocks().stream()
-            .filter(s -> s.getSymbol().equals(symbol))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Stock not found in portfolio"));
-        
-        return stockHistoryRepository.findBySymbolOrderByDateAsc(symbol).stream()
-            .collect(Collectors.toMap(
-                StockHistory::getDate,
-                sh -> Map.of(
-                    "price", sh.getPrice(),
-                    "quantity", stock.getQuantity()
-                ),
-                (a, b) -> a,
-                TreeMap::new
-            ));
-    }
-
-    public Portfolio findFirstByUserId(String userId) {
-        return portfolioRepository.findFirstByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
-    }
-
-    public Map<LocalDate, Map<String, Object>> getPortfolioTotalHistoryWithDetails(String userId, LocalDate startDate, LocalDate endDate) {
-        Map<LocalDate, Map<String, Map<String, Object>>> history = getPortfolioHistory(userId, startDate, endDate);
-        
-        Map<LocalDate, Map<String, Object>> result = new TreeMap<>();
-        
-        for (Map.Entry<LocalDate, Map<String, Map<String, Object>>> entry : history.entrySet()) {
-            LocalDate date = entry.getKey();
-            Map<String, Map<String, Object>> stocks = entry.getValue();
-            
-            Map<String, Object> dayData = new HashMap<>();
-            double totalValue = 0.0;
-            Map<String, Double> stockValues = new HashMap<>();
-            
-            for (Map.Entry<String, Map<String, Object>> stockEntry : stocks.entrySet()) {
-                String symbol = stockEntry.getKey();
-                Map<String, Object> details = stockEntry.getValue();
-                double stockValue = (double) details.get("totalValue");
-                
-                stockValues.put(symbol, stockValue);
-                totalValue += stockValue;
-            }
-            
-            dayData.put("totalValue", totalValue);
-            dayData.put("stockDetails", stockValues);
-            result.put(date, dayData);
-        }
-        
-        return result;
-    }
-
-    private Portfolio findPortfolioByUserId(String userId) {
-        return portfolioRepository.findFirstByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
-    }
-
-    @Scheduled(cron = "0 0 18 * * *")
-    private void updateStockPrice(String symbol, LocalDate date) {
+    // Belirli bir hissenin fiyatını güncelle
+    private void updateSingleStockPrice(String symbol) {
         try {
-            double price = financeService.getStockPrice(symbol, "USD", date);
+            LocalDate today = LocalDate.now();
+            double price = financeService.getStockPrice(symbol, "USD", today);
+            
             StockHistory stockHistory = new StockHistory();
             stockHistory.setSymbol(symbol);
-            stockHistory.setDate(date);
+            stockHistory.setDate(today);
             stockHistory.setPrice(price);
             stockHistoryRepository.save(stockHistory);
-            logger.info("Updated price for {} at {}: {}", symbol, date, price);
+            
+            logger.info("Updated price for {} at {}: {}", symbol, today, price);
         } catch (Exception e) {
             logger.error("Error updating price for {}: {}", symbol, e.getMessage());
         }
+    }
+
+    // Her gün saat 18:00'de çalışacak otomatik güncelleme
+    @Scheduled(cron = "0 0 18 * * *")
+    public void scheduledPriceUpdate() {
+        logger.info("Starting scheduled price update for all stocks");
+        
+        try {
+            // Tüm portfolyolardaki benzersiz hisseleri bul ve güncelle
+            portfolioRepository.findAll().stream()
+                .flatMap(portfolio -> portfolio.getStocks().stream())
+                .map(PortfolioStock::getSymbol)
+                .distinct()
+                .forEach(this::updateSingleStockPrice);
+                
+            logger.info("Completed scheduled price update successfully");
+        } catch (Exception e) {
+            logger.error("Error during scheduled price update: {}", e.getMessage());
+        }
+    }
+
+    // Portfolyo bulma yardımcı metodu
+    public Portfolio findPortfolioByUserId(String userId) {
+        return portfolioRepository.findFirstByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
+    }
+
+    // Portfolyo geçmişini getir
+    public List<Map<String, Object>> getPortfolioHistory(String userId, LocalDate startDate, LocalDate endDate) {
+        try {
+            Portfolio portfolio = findPortfolioByUserId(userId);
+            List<Map<String, Object>> result = new ArrayList<>();
+            
+            // Her hisse için tek bir satır oluştur
+            for (PortfolioStock stock : portfolio.getStocks()) {
+                Map<String, Object> stockData = new HashMap<>();
+                double price = financeService.getStockPrice(stock.getSymbol(), "USD", LocalDate.now());
+                double total = price * stock.getQuantity();
+                
+                // Her hisse için tek bir satır için veri hazırla
+                stockData.put("Tarih", LocalDate.now().toString());
+                stockData.put("Hisse", stock.getSymbol());
+                // Fiyat ve toplam değerleri 2 ondalık basamağa yuvarla
+                stockData.put("Fiyat", Math.round(price * 100.0) / 100.0);
+                stockData.put("Adet", stock.getQuantity());
+                stockData.put("Toplam", Math.round(total * 100.0) / 100.0);
+                
+                result.add(stockData);
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            logger.error("Error getting portfolio history: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    // Portfolyonun toplam değerini hesapla
+    public Map<LocalDate, Double> getPortfolioTotalValue(String userId, LocalDate startDate, LocalDate endDate) {
+        Portfolio portfolio = findPortfolioByUserId(userId);
+        List<String> symbols = portfolio.getStocks().stream()
+            .map(PortfolioStock::getSymbol)
+            .collect(Collectors.toList());
+            
+        return stockHistoryRepository.findBySymbolInAndDateBetweenOrderByDateAsc(
+                symbols, startDate, endDate)
+            .stream()
+            .collect(Collectors.groupingBy(
+                StockHistory::getDate,
+                TreeMap::new,
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    list -> list.stream()
+                        .mapToDouble(sh -> {
+                            PortfolioStock ps = portfolio.getStocks().stream()
+                                .filter(s -> s.getSymbol().equals(sh.getSymbol()))
+                                .findFirst()
+                                .orElseThrow();
+                            return sh.getPrice() * ps.getQuantity();
+                        })
+                        .sum()
+                )
+            ));
     }
 } 
