@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;  // Şimdilik test için rastgele fiyatlar üreteceğiz
+import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +43,7 @@ public class FinanceService {
     // Döviz çevirme işlemi
     public Double getExchangeRate(String fromCurrency, String toCurrency, LocalDate date) {
         String url = String.format("/%s/latest/%s", 
-            apiKey.trim(),  // Boşlukları temizle
+            apiKey.trim(),
             fromCurrency.toUpperCase());
             
         logger.info("Calling exchange rate API with URL: {}", url);
@@ -60,7 +60,7 @@ public class FinanceService {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode json = mapper.readTree(response);
             
-            if (json.has("conversion_rates")) {  // API yanıt formatı değişti
+            if (json.has("conversion_rates")) {
                 Double rate = json.get("conversion_rates").get(toCurrency.toUpperCase()).asDouble();
                 logger.info("Exchange rate result: {}", rate);
                 return rate;
@@ -73,7 +73,7 @@ public class FinanceService {
         }
     }
 
-    // Şimdilik test için rastgele fiyatlar üretiyoruz
+    
     public double getStockPrice(String symbol, String currency, LocalDate date) {
         try {
             String url = String.format("/query?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",

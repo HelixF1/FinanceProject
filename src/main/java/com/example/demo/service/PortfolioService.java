@@ -88,7 +88,7 @@ public class PortfolioService {
         logger.info("Starting scheduled price update for all stocks");
         
         try {
-            // Tüm portfolyolardaki benzersiz hisseleri bul ve güncelle
+            
             portfolioRepository.findAll().stream()
                 .flatMap(portfolio -> portfolio.getStocks().stream())
                 .map(PortfolioStock::getSymbol)
