@@ -165,4 +165,10 @@ public class PortfolioService {
                 )
             ));
     }
+
+    public void deletePortfolio(String userId) {
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Portfolio bulunamadı: " + userId));
+        portfolioRepository.delete(portfolio);
+    }
 } 

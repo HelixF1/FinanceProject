@@ -5,6 +5,7 @@ import com.example.demo.model.Portfolio;
 import com.example.demo.service.PortfolioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
@@ -57,5 +58,15 @@ public class PortfolioController {
         return portfolio.getStocks().stream()
             .map(stock -> stock.getSymbol())
             .toList();
+    }
+    
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deletePortfolio(@RequestParam String userId) {
+        try {
+            portfolioService.deletePortfolio(userId);
+            return ResponseEntity.ok().body("Portfolio başarıyla silindi");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 } 

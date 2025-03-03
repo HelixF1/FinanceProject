@@ -70,6 +70,12 @@
                 <button type="submit">Hisse Ekle</button>
             </form>
             <div id="portfolioManagementResult" class="result"></div>
+
+            <form id="deletePortfolioForm">
+                <input type="text" id="deleteUserId" placeholder="Kullanıcı ID" required>
+                <button type="submit">Portfolio Sil</button>
+            </form>
+            <div id="deletePortfolioResult" class="result"></div>
         </div>
 
         <!-- Portfolio Geçmişi -->
@@ -199,6 +205,24 @@
                 })
                 .fail(function(err) {
                     $('#portfolioHistoryResult').text('Hata: ' + err.responseText);
+                });
+            });
+
+            // Portfolio silme
+            $('#deletePortfolioForm').submit(function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/api/portfolio/delete',
+                    type: 'DELETE',
+                    data: {
+                        userId: $('#deleteUserId').val()
+                    },
+                    success: function() {
+                        $('#deletePortfolioResult').html('Portfolio başarıyla silindi!');
+                    },
+                    error: function(err) {
+                        $('#deletePortfolioResult').text('Hata: ' + err.responseText);
+                    }
                 });
             });
         });

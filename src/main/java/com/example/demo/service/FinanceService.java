@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.Set;
+import java.time.ZoneId;
 
 @Service
 public class FinanceService {
@@ -76,11 +77,12 @@ public class FinanceService {
     
     public double getStockPrice(String symbol, String currency, LocalDate date) {
         try {
-            String url = String.format("/query?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",
+            String url = String.format("https://query1.finance.yahoo.com/v8/finance/chart/%s?interval=1d&period1=%d&period2=%d",
                 symbol,
-                stockApiKey.trim());
+                date.atStartOfDay(ZoneId.systemDefault()).toEpochSecond(),
+                date.atStartOfDay(ZoneId.systemDefault()).plusDays(1).toEpochSecond());
             
-            logger.info("Calling Alpha Vantage API with URL: {}", url);
+            logger.info("Calling Yahoo Finance API with URL: {}", url);
             
             String response = stockWebClient.get()
                     .uri(url)
@@ -91,35 +93,23 @@ public class FinanceService {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode json = mapper.readTree(response);
             
-            double price;
-            if (json.has("Global Quote")) {
-                JsonNode quote = json.get("Global Quote");
-                if (quote.has("05. price")) {
-                    price = Double.parseDouble(quote.get("05. price").asText());
-                } else {
-                    // API'den fiyat alınamazsa test verilerini kullan
-                    price = switch(symbol.toUpperCase()) {
-                        case "AAPL" -> 175.50;
-                        case "TSLA" -> 180.25;
-                        case "NVDA" -> 785.40;
-                        case "GOOGL" -> 138.75;
-                        case "MSFT" -> 406.50;
-                        default -> 100.00;
-                    };
-                }
-            } else {
-                // API yanıt vermezse test verilerini kullan
-                price = switch(symbol.toUpperCase()) {
-                    case "AAPL" -> 175.50;
-                    case "TSLA" -> 180.25;
-                    case "NVDA" -> 785.40;
-                    case "GOOGL" -> 138.75;
-                    case "MSFT" -> 406.50;
-                    default -> 100.00;
-                };
+            if (!json.has("chart") || !json.get("chart").has("result")) {
+                throw new RuntimeException("API yanıtı geçersiz format içeriyor");
             }
             
-            // Para birimi dönüşümü (hem gerçek hem test verileri için)
+            JsonNode result = json.get("chart").get("result").get(0);
+            if (!result.has("indicators") || !result.get("indicators").has("quote")) {
+                throw new RuntimeException("Hisse fiyatı API yanıtında bulunamadı");
+            }
+            
+            JsonNode quote = result.get("indicators").get("quote").get(0);
+            if (!quote.has("close") || quote.get("close").size() == 0) {
+                throw new RuntimeException("Hisse fiyatı bulunamadı");
+            }
+            
+            double price = quote.get("close").get(0).asDouble();
+            
+            // Para birimi dönüşümü
             if (!currency.equalsIgnoreCase("USD")) {
                 try {
                     Double exchangeRate = getExchangeRate("USD", currency, date);
@@ -128,7 +118,7 @@ public class FinanceService {
                         currency, price/exchangeRate, exchangeRate, price);
                 } catch (Exception e) {
                     logger.error("Error converting currency: {}", e.getMessage());
-                    throw e;
+                    throw new RuntimeException("Para birimi dönüşümü yapılamadı: " + e.getMessage());
                 }
             }
             
@@ -136,46 +126,21 @@ public class FinanceService {
             
         } catch (Exception e) {
             logger.error("Error in getStockPrice: {}", e.getMessage());
-            throw new RuntimeException("Error getting stock price: " + e.getMessage());
+            throw new RuntimeException("Hisse fiyatı alınamadı: " + e.getMessage());
         }
-    }
-
-    // Test verileri için yardımcı metod
-    private Double getTestPrice(String symbol, String currency) {
-        Map<String, Double> testPrices = Map.of(
-            "AAPL", 245.55,
-            "GOOGL", 179.66,
-            "MSFT", 425.22,
-            "TSLA", 202.64,
-            "AMZN", 178.35,
-            "META", 484.03,
-            "NVDA", 788.17,
-            "JPM", 183.99,
-            "V", 275.96,
-            "WMT", 175.56
-        );
-        
-        Double basePrice = testPrices.getOrDefault(symbol, 100.0);
-        
-        if (!currency.equalsIgnoreCase("USD")) {
-            try {
-                Double exchangeRate = getExchangeRate("USD", currency, LocalDate.now());
-                return basePrice * exchangeRate;
-            } catch (Exception e) {
-                logger.error("Error converting test price: ", e);
-                return basePrice;
-            }
-        }
-        
-        return basePrice;
     }
 
     // Toplu hisse senedi fiyatı alma
     public Map<String, Double> getBulkStockPrices(StockRequest request) {
         Map<String, Double> results = new HashMap<>();
         for (String symbol : request.getStockSymbols()) {
-            Double price = getStockPrice(symbol, request.getCurrency(), request.getDate());
-            results.put(symbol, price);
+            try {
+                Double price = getStockPrice(symbol, request.getCurrency(), request.getDate());
+                results.put(symbol, price);
+            } catch (Exception e) {
+                logger.error("Error getting price for {}: {}", symbol, e.getMessage());
+                throw new RuntimeException(symbol + " için fiyat alınamadı: " + e.getMessage());
+            }
         }
         return results;
     }
@@ -183,18 +148,11 @@ public class FinanceService {
     public Map<String, Object> calculateTotalPortfolioValue(List<String> symbols, String currency, LocalDate date) {
         logger.info("Calculating total value for {} stocks in {}", symbols.size(), currency);
         
-        // Geçerli hisse kodları listesi
-        Set<String> validSymbols = Set.of(
-            "AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", 
-            "META", "NVDA", "JPM", "V", "WMT"
-        );
-        
         // Boş ve geçersiz sembolleri filtrele
         symbols = symbols.stream()
                 .filter(symbol -> symbol != null && !symbol.trim().isEmpty())
                 .map(String::trim)
                 .map(String::toUpperCase)
-                .filter(validSymbols::contains)
                 .collect(Collectors.toList());
         
         Map<String, Double> values = new HashMap<>();
@@ -207,9 +165,7 @@ public class FinanceService {
                 total += price;
             } catch (Exception e) {
                 logger.error("Error getting price for {}: {}", symbol, e.getMessage());
-                Double testPrice = getTestPrice(symbol, currency);
-                values.put(symbol, testPrice);
-                total += testPrice;
+                throw new RuntimeException(symbol + " için fiyat alınamadı: " + e.getMessage());
             }
         }
         
