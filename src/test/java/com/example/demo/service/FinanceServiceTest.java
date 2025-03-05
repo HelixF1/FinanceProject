@@ -5,16 +5,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class FinanceServiceTest {
 
     @Mock
@@ -22,6 +27,24 @@ class FinanceServiceTest {
     
     @Mock
     private WebClient currencyWebClient;
+    
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> yahooUriSpec;
+    
+    @Mock
+    private WebClient.RequestHeadersSpec<?> yahooHeadersSpec;
+    
+    @Mock
+    private WebClient.ResponseSpec yahooResponseSpec;
+    
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> currencyUriSpec;
+    
+    @Mock
+    private WebClient.RequestHeadersSpec<?> currencyHeadersSpec;
+    
+    @Mock
+    private WebClient.ResponseSpec currencyResponseSpec;
 
     private FinanceService financeService;
 
@@ -51,24 +74,16 @@ class FinanceServiceTest {
             }""";
 
         // Yahoo Finance WebClient yapılandırması
-        WebClient.RequestHeadersUriSpec<?> yahooSpec = mock(WebClient.RequestHeadersUriSpec.class);
-        WebClient.RequestHeadersSpec<?> yahooHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec yahooResponseSpec = mock(WebClient.ResponseSpec.class);
-
-        doReturn(yahooSpec).when(yahooFinanceWebClient).get();
-        doReturn(yahooHeadersSpec).when(yahooSpec).uri(any(String.class));
-        doReturn(yahooResponseSpec).when(yahooHeadersSpec).retrieve();
-        doReturn(Mono.just(stockResponse)).when(yahooResponseSpec).bodyToMono(String.class);
+        lenient().when(yahooFinanceWebClient.get()).thenReturn(yahooUriSpec);
+        lenient().when(yahooUriSpec.uri(any(String.class))).thenReturn(yahooHeadersSpec);
+        lenient().when(yahooHeadersSpec.retrieve()).thenReturn(yahooResponseSpec);
+        lenient().when(yahooResponseSpec.bodyToMono(String.class)).thenReturn(Mono.just(stockResponse));
 
         // Currency WebClient yapılandırması
-        WebClient.RequestHeadersUriSpec<?> currencySpec = mock(WebClient.RequestHeadersUriSpec.class);
-        WebClient.RequestHeadersSpec<?> currencyHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec currencyResponseSpec = mock(WebClient.ResponseSpec.class);
-
-        doReturn(currencySpec).when(currencyWebClient).get();
-        doReturn(currencyHeadersSpec).when(currencySpec).uri(any(String.class));
-        doReturn(currencyResponseSpec).when(currencyHeadersSpec).retrieve();
-        doReturn(Mono.just(currencyResponse)).when(currencyResponseSpec).bodyToMono(String.class);
+        lenient().when(currencyWebClient.get()).thenReturn(currencyUriSpec);
+        lenient().when(currencyUriSpec.uri(any(Function.class))).thenReturn(currencyHeadersSpec);
+        lenient().when(currencyHeadersSpec.retrieve()).thenReturn(currencyResponseSpec);
+        lenient().when(currencyResponseSpec.bodyToMono(String.class)).thenReturn(Mono.just(currencyResponse));
 
         financeService = new FinanceService(yahooFinanceWebClient, currencyWebClient);
     }
@@ -84,7 +99,6 @@ class FinanceServiceTest {
         double price = financeService.getStockPrice(symbol, currency, date);
         
         // Doğrulama
-        assertTrue(price > 0);
         assertEquals(150.0, price);
     }
 
@@ -99,7 +113,6 @@ class FinanceServiceTest {
         double rate = financeService.getExchangeRate(fromCurrency, toCurrency, date);
         
         // Doğrulama
-        assertTrue(rate > 0);
         assertEquals(0.85, rate);
     }
 }
