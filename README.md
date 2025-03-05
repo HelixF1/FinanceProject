@@ -6,10 +6,46 @@ Bu proje, hisse senedi portföyü yönetimi için geliştirilmiş bir Spring Boo
 
 - Java 17 veya üzeri
 - Maven 3.6 veya üzeri
-- Alpha Vantage API anahtarı
-- ExchangeRate API anahtarı
+- PostgreSQL 14 veya üzeri
+- Free Currency API anahtarı (https://freecurrencyapi.com/)
 
 ## Kurulum
+
+### PostgreSQL Kurulumu
+
+1. PostgreSQL'i indirin ve kurun:
+   - Windows: https://www.postgresql.org/download/windows/
+   - macOS: `brew install postgresql`
+   - Linux: `sudo apt-get install postgresql`
+
+2. PostgreSQL servisini başlatın:
+   - Windows: Otomatik başlar
+   - macOS: `brew services start postgresql`
+   - Linux: `sudo service postgresql start`
+
+3. Veritabanını oluşturun:
+```bash
+# PostgreSQL komut satırına girin
+psql -U postgres
+
+# Veritabanını oluşturun
+CREATE DATABASE portfolio_db;
+
+# Veritabanı oluşturulduğunu kontrol edin
+\l
+
+# Çıkış yapın
+\q
+```
+
+### API Anahtarı Alma
+
+1. Free Currency API için:
+   - https://freecurrencyapi.com/ adresine gidin
+   - Ücretsiz hesap oluşturun
+   - API anahtarınızı alın (günlük 5000 istek hakkı)
+
+### Projeyi Klonlama ve Yapılandırma
 
 1. Projeyi klonlayın:
 ```bash
@@ -17,10 +53,17 @@ git clone https://github.com/HelixF1/FinanceProject.git
 cd FinanceProject
 ```
 
-2. `src/main/resources/application.properties` dosyasını düzenleyin ve API anahtarlarınızı ekleyin:
-```properties
-alpha.vantage.api.key=your_alpha_vantage_api_key
-exchangerate.api.key=your_exchangerate_api_key
+2. `src/main/resources/application.yml` dosyasını düzenleyin:
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/portfolio_db
+    username: postgres  # PostgreSQL kullanıcı adınız
+    password: password # PostgreSQL şifreniz
+
+api:
+  currency:
+    api-key: your_currency_api_key
 ```
 
 ## Çalıştırma
@@ -73,6 +116,13 @@ curl "http://localhost:8080/api/portfolio/history?userId=user123"
 curl "http://localhost:8080/api/finance/stock-price?symbol=AAPL&currency=USD&date=2024-03-03"
 ```
 
+## Veritabanı Şeması
+
+Uygulama Flyway ile otomatik olarak aşağıdaki tabloları oluşturur:
+- `portfolios`: Kullanıcı portföylerini tutar
+- `portfolio_stocks`: Portföylerdeki hisse senetlerini tutar
+- `stock_history`: Hisse senedi fiyat geçmişini tutar
+
 ## Test
 
 Uygulamayı test etmek için:
@@ -84,7 +134,8 @@ mvn test
 
 - Spring Boot 3.2.3
 - Spring Data JPA
-- H2 Database
+- PostgreSQL 14+
 - Maven
-- Alpha Vantage API
-- ExchangeRate API
+- Flyway (Database migration)
+- Yahoo Finance API
+- Free Currency API
