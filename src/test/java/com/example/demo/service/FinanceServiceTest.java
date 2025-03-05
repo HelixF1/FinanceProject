@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +48,7 @@ class FinanceServiceTest {
 
     private FinanceService financeService;
 
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         // Mock yanıtları
@@ -74,16 +75,16 @@ class FinanceServiceTest {
             }""";
 
         // Yahoo Finance WebClient yapılandırması
-        lenient().when(yahooFinanceWebClient.get()).thenReturn(yahooUriSpec);
-        lenient().when(yahooUriSpec.uri(any(String.class))).thenReturn(yahooHeadersSpec);
-        lenient().when(yahooHeadersSpec.retrieve()).thenReturn(yahooResponseSpec);
-        lenient().when(yahooResponseSpec.bodyToMono(String.class)).thenReturn(Mono.just(stockResponse));
+        doReturn(yahooUriSpec).when(yahooFinanceWebClient).get();
+        doReturn(yahooHeadersSpec).when(yahooUriSpec).uri(any(String.class));
+        doReturn(yahooResponseSpec).when(yahooHeadersSpec).retrieve();
+        doReturn(Mono.just(stockResponse)).when(yahooResponseSpec).bodyToMono(String.class);
 
         // Currency WebClient yapılandırması
-        lenient().when(currencyWebClient.get()).thenReturn(currencyUriSpec);
-        lenient().when(currencyUriSpec.uri(any(Function.class))).thenReturn(currencyHeadersSpec);
-        lenient().when(currencyHeadersSpec.retrieve()).thenReturn(currencyResponseSpec);
-        lenient().when(currencyResponseSpec.bodyToMono(String.class)).thenReturn(Mono.just(currencyResponse));
+        doReturn(currencyUriSpec).when(currencyWebClient).get();
+        doReturn(currencyHeadersSpec).when(currencyUriSpec).uri(any(Function.class));
+        doReturn(currencyResponseSpec).when(currencyHeadersSpec).retrieve();
+        doReturn(Mono.just(currencyResponse)).when(currencyResponseSpec).bodyToMono(String.class);
 
         financeService = new FinanceService(yahooFinanceWebClient, currencyWebClient);
     }
