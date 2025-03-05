@@ -9,15 +9,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("unchecked")
 class FinanceServiceTest {
 
     @Mock
@@ -25,15 +23,6 @@ class FinanceServiceTest {
     
     @Mock
     private WebClient currencyWebClient;
-    
-    @Mock
-    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
-    
-    @Mock
-    private WebClient.RequestHeadersSpec requestHeadersSpec;
-    
-    @Mock
-    private WebClient.ResponseSpec responseSpec;
 
     private FinanceService financeService;
 
@@ -45,6 +34,7 @@ class FinanceServiceTest {
                 "chart": {
                     "result": [{
                         "meta": {"regularMarketPrice": 150.0},
+                        "timestamp": [1234567890],
                         "indicators": {
                             "quote": [{
                                 "close": [150.0]
@@ -61,19 +51,22 @@ class FinanceServiceTest {
                 }
             }""";
 
-        // Yahoo Finance WebClient yapılandırması
-        doReturn(requestHeadersUriSpec).when(yahooFinanceWebClient).get();
-        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(String.class));
-        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(Function.class));
-        doReturn(responseSpec).when(requestHeadersSpec).retrieve();
-        doReturn(Mono.just(stockResponse)).when(responseSpec).bodyToMono(String.class);
+        // WebClient.Builder mock'ları
+        WebClient.RequestHeadersUriSpec<?> uriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec<?> headersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
-        // Currency WebClient yapılandırması
-        doReturn(requestHeadersUriSpec).when(currencyWebClient).get();
-        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(String.class));
-        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(Function.class));
-        doReturn(responseSpec).when(requestHeadersSpec).retrieve();
-        doReturn(Mono.just(currencyResponse)).when(responseSpec).bodyToMono(String.class);
+        // Yahoo Finance için mock yapılandırması
+        lenient().when(yahooFinanceWebClient.get()).thenReturn(uriSpec);
+        lenient().when(uriSpec.uri(anyString())).thenReturn(headersSpec);
+        lenient().when(headersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(stockResponse));
+
+        // Currency API için mock yapılandırması
+        lenient().when(currencyWebClient.get()).thenReturn(uriSpec);
+        lenient().when(uriSpec.uri(anyString())).thenReturn(headersSpec);
+        lenient().when(headersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(currencyResponse));
 
         financeService = new FinanceService(yahooFinanceWebClient, currencyWebClient);
     }
