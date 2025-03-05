@@ -23,21 +23,17 @@ class FinanceServiceTest {
     
     @Mock
     private WebClient currencyWebClient;
-    
-    @Mock
-    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
-    
-    @Mock
-    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
-    
-    @Mock
-    private WebClient.ResponseSpec responseSpec;
 
     private FinanceService financeService;
 
     @BeforeEach
     void setUp() {
-        // Mock response for stock price
+        // Mock WebClient.Builder
+        WebClient.RequestHeadersUriSpec<?> uriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec<?> headersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        // Stock response
         String stockResponse = """
             {
                 "chart": {
@@ -49,29 +45,29 @@ class FinanceServiceTest {
                         }
                     }]
                 }
-            }
-            """;
-            
-        // Mock response for exchange rate
-        String rateResponse = """
+            }""";
+
+        // Currency response
+        String currencyResponse = """
             {
                 "data": {
                     "EUR": 0.85
                 }
-            }
-            """;
+            }""";
 
-        // Setup WebClient mocks
-        when(yahooFinanceWebClient.get()).thenReturn(requestHeadersUriSpec);
-        when(currencyWebClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
-        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        
-        // Different responses for different clients
+        // Configure mocks for stock price
+        when(yahooFinanceWebClient.get()).thenReturn(uriSpec);
+        when(uriSpec.uri(anyString())).thenReturn(headersSpec);
+        when(headersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(String.class))
-            .thenReturn(Mono.just(stockResponse))  // First call (stock price)
-            .thenReturn(Mono.just(rateResponse));  // Second call (exchange rate)
+            .thenReturn(Mono.just(stockResponse));
+
+        // Configure mocks for currency rate
+        when(currencyWebClient.get()).thenReturn(uriSpec);
+        when(uriSpec.uri(any(java.util.function.Function.class))).thenReturn(headersSpec);
+        when(headersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(String.class))
+            .thenReturn(Mono.just(currencyResponse));
 
         financeService = new FinanceService(yahooFinanceWebClient, currencyWebClient);
     }
