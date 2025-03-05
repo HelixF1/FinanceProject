@@ -9,10 +9,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings("unchecked")
@@ -64,16 +66,18 @@ class FinanceServiceTest {
             }""";
 
         // Yahoo Finance WebClient yapılandırması
-        doReturn(yahooSpec).when(yahooFinanceWebClient).get();
-        doReturn(headersSpec).when(yahooSpec).uri((URI) any());
-        doReturn(responseSpec).when(headersSpec).retrieve();
-        doReturn(Mono.just(stockResponse)).when(responseSpec).bodyToMono(String.class);
+        lenient().when(yahooFinanceWebClient.get()).thenReturn(yahooSpec);
+        lenient().when(yahooSpec.uri(anyString())).thenReturn(headersSpec);
+        lenient().when(yahooSpec.uri(any(Function.class))).thenReturn(headersSpec);
+        lenient().when(headersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(stockResponse));
 
         // Currency WebClient yapılandırması
-        doReturn(currencySpec).when(currencyWebClient).get();
-        doReturn(headersSpec).when(currencySpec).uri((URI) any());
-        doReturn(responseSpec).when(headersSpec).retrieve();
-        doReturn(Mono.just(currencyResponse)).when(responseSpec).bodyToMono(String.class);
+        lenient().when(currencyWebClient.get()).thenReturn(currencySpec);
+        lenient().when(currencySpec.uri(anyString())).thenReturn(headersSpec);
+        lenient().when(currencySpec.uri(any(Function.class))).thenReturn(headersSpec);
+        lenient().when(headersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(currencyResponse));
 
         financeService = new FinanceService(yahooFinanceWebClient, currencyWebClient);
     }
