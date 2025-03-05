@@ -12,7 +12,8 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FinanceServiceTest {
@@ -22,6 +23,15 @@ class FinanceServiceTest {
     
     @Mock
     private WebClient currencyWebClient;
+    
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
+    
+    @Mock
+    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+    
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
 
     private FinanceService financeService;
 
@@ -50,16 +60,17 @@ class FinanceServiceTest {
                 }
             }""";
 
-        // WebClient mock'ları
-        WebClient.RequestHeadersUriSpec<?> uriSpec = WebClient.builder().build().get();
-        WebClient.RequestHeadersSpec<?> headersSpec = uriSpec.uri("/dummy");
-        WebClient.ResponseSpec responseSpec = headersSpec.retrieve();
+        // Yahoo Finance WebClient yapılandırması
+        when(yahooFinanceWebClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(stockResponse));
 
-        // Yahoo Finance için mock
-        doReturn(Mono.just(stockResponse)).when(yahooFinanceWebClient).get().uri(any(String.class)).retrieve().bodyToMono(String.class);
-
-        // Currency API için mock
-        doReturn(Mono.just(currencyResponse)).when(currencyWebClient).get().uri(any(String.class)).retrieve().bodyToMono(String.class);
+        // Currency WebClient yapılandırması
+        when(currencyWebClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(currencyResponse));
 
         financeService = new FinanceService(yahooFinanceWebClient, currencyWebClient);
     }
