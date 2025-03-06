@@ -61,7 +61,7 @@ public class FinanceService {
                 price *= exchangeRate;
             }
             
-            return price;
+            return roundToTwoDecimals(price);
             
         } catch (Exception e) {
             logger.error("Error getting stock price: {}", e.getMessage());
@@ -89,7 +89,8 @@ public class FinanceService {
                 throw new RuntimeException("Döviz kuru bulunamadı");
             }
             
-            return json.get("data").get(toCurrency).asDouble();
+            double rate = json.get("data").get(toCurrency).asDouble();
+            return roundToTwoDecimals(rate);
             
         } catch (Exception e) {
             logger.error("Error getting exchange rate: {}", e.getMessage());
@@ -102,7 +103,7 @@ public class FinanceService {
         for (String symbol : request.getSymbols()) {
             try {
                 double price = getStockPrice(symbol, request.getCurrency(), request.getDate());
-                prices.put(symbol, price);
+                prices.put(symbol, roundToTwoDecimals(price));
             } catch (Exception e) {
                 logger.error("Error getting price for {}: {}", symbol, e.getMessage());
                 prices.put(symbol, -1.0);
@@ -122,6 +123,10 @@ public class FinanceService {
                 }
             })
             .sum();
+    }
+
+    private double roundToTwoDecimals(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 }
 

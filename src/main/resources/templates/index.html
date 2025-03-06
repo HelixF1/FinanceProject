@@ -102,7 +102,7 @@
                     date: $('#exchangeDate').val()
                 })
                 .done(function(result) {
-                    $('#exchangeRateResult').html('Döviz Kuru: ' + result);
+                    $('#exchangeRateResult').html('Döviz Kuru: ' + parseFloat(result).toFixed(2));
                 })
                 .fail(function(err) {
                     $('#exchangeRateResult').text('Hata: ' + err.responseText);
@@ -118,7 +118,7 @@
                     date: $('#stockDate').val()
                 })
                 .done(function(result) {
-                    $('#stockPriceResult').html('Hisse Fiyatı: ' + result);
+                    $('#stockPriceResult').html('Hisse Fiyatı: ' + parseFloat(result).toFixed(2));
                 })
                 .fail(function(err) {
                     $('#stockPriceResult').text('Hata: ' + err.responseText);
@@ -128,20 +128,20 @@
             // Toplu hisse fiyatları
             $('#bulkStockForm').submit(function(e) {
                 e.preventDefault();
-                const symbols = $('#bulkSymbols').val().split('\n').filter(s => s.trim());
+                const symbols = $('#bulkSymbols').val().split('\n').map(s => s.trim()).filter(s => s);
                 $.ajax({
                     url: '/api/finance/bulk-stock-prices',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        stockSymbols: symbols,
+                        symbols: symbols,
                         currency: $('#bulkCurrency').val(),
                         date: $('#bulkDate').val()
                     }),
                     success: function(result) {
                         let html = '<table><tr><th>Hisse</th><th>Fiyat</th></tr>';
                         for (const [symbol, price] of Object.entries(result)) {
-                            html += `<tr><td>${symbol}</td><td>${price}</td></tr>`;
+                            html += `<tr><td>${symbol}</td><td>${parseFloat(price).toFixed(2)}</td></tr>`;
                         }
                         html += '</table>';
                         $('#bulkStockResult').html(html);
