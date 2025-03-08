@@ -190,18 +190,22 @@
                     endDate: $('#endDate').val()
                 })
                 .done(function(result) {
-                    let html = '<table><tr><th>Tarih</th><th>Hisse</th><th>Fiyat</th><th>Adet</th><th>Toplam</th></tr>';
-                    result.forEach(function(item) {
-                        html += `<tr>
-                            <td>${item.Tarih}</td>
-                            <td>${item.Hisse}</td>
-                            <td>${item.Fiyat}</td>
-                            <td>${item.Adet}</td>
-                            <td>${item.Toplam}</td>
-                        </tr>`;
-                    });
-                    html += '</table>';
-                    $('#portfolioHistoryResult').html(html);
+                    if (result && result.length > 0) {
+                        let html = '<table><tr><th>Tarih</th><th>Hisse</th><th>Fiyat</th><th>Adet</th><th>Toplam</th></tr>';
+                        result.forEach(function(item) {
+                            html += `<tr>
+                                <td>${item.Tarih}</td>
+                                <td>${item.Hisse}</td>
+                                <td>${item.Fiyat}</td>
+                                <td>${item.Adet}</td>
+                                <td>${item.Toplam}</td>
+                            </tr>`;
+                        });
+                        html += '</table>';
+                        $('#portfolioHistoryResult').html(html);
+                    } else {
+                        $('#portfolioHistoryResult').html('Henüz portfolio geçmişi bulunmuyor.');
+                    }
                 })
                 .fail(function(err) {
                     $('#portfolioHistoryResult').text('Hata: ' + err.responseText);

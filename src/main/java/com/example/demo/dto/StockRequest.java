@@ -1,8 +1,14 @@
-package com.example.demo.model;
+package com.example.demo.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class StockRequest {
     private List<String> symbols;
     private String currency;

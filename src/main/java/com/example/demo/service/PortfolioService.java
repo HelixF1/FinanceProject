@@ -111,23 +111,28 @@ public class PortfolioService {
     public List<Map<String, Object>> getPortfolioHistory(String userId, LocalDate startDate, LocalDate endDate) {
         try {
             Portfolio portfolio = findPortfolioByUserId(userId);
+            logger.info("Found portfolio for user: {}, with {} stocks", userId, portfolio.getStocks().size());
+            
             List<Map<String, Object>> result = new ArrayList<>();
             
-            // Her hisse için tek bir satır oluştur
             for (PortfolioStock stock : portfolio.getStocks()) {
-                Map<String, Object> stockData = new HashMap<>();
-                double price = financeService.getStockPrice(stock.getSymbol(), "USD", LocalDate.now());
-                double total = price * stock.getQuantity();
-                
-                // Her hisse için tek bir satır için veri hazırla
-                stockData.put("Tarih", LocalDate.now().toString());
-                stockData.put("Hisse", stock.getSymbol());
-                // Fiyat ve toplam değerleri 2 ondalık basamağa yuvarla
-                stockData.put("Fiyat", Math.round(price * 100.0) / 100.0);
-                stockData.put("Adet", stock.getQuantity());
-                stockData.put("Toplam", Math.round(total * 100.0) / 100.0);
-                
-                result.add(stockData);
+                try {
+                    Map<String, Object> stockData = new HashMap<>();
+                    double price = financeService.getStockPrice(stock.getSymbol(), "USD", LocalDate.now());
+                    double total = price * stock.getQuantity();
+                    
+                    stockData.put("Tarih", LocalDate.now().toString());
+                    stockData.put("Hisse", stock.getSymbol());
+                    stockData.put("Fiyat", Math.round(price * 100.0) / 100.0);
+                    stockData.put("Adet", stock.getQuantity());
+                    stockData.put("Toplam", Math.round(total * 100.0) / 100.0);
+                    
+                    result.add(stockData);
+                    logger.info("Added stock data for symbol: {}, price: {}, quantity: {}", 
+                        stock.getSymbol(), price, stock.getQuantity());
+                } catch (Exception e) {
+                    logger.error("Error processing stock {}: {}", stock.getSymbol(), e.getMessage());
+                }
             }
             
             return result;

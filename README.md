@@ -1,141 +1,98 @@
-# Finance Project
+# Portfolio Takip Uygulaması
 
-Bu proje, hisse senedi portföyü yönetimi için geliştirilmiş bir Spring Boot uygulamasıdır.
+## Proje Hakkında
+Bu uygulama, kullanıcıların hisse senedi portfolyolarını yönetmelerini ve takip etmelerini sağlayan bir Spring Boot uygulamasıdır.
 
-## Gereksinimler
+## Özellikler
+- 📈 Hisse senedi fiyatlarını gerçek zamanlı takip (Yahoo Finance)
+- 💱 Döviz kuru çevirisi (FreeCurrencyAPI)
+- 📊 Portfolio yönetimi ve geçmiş takibi
+- 📱 Kullanıcı dostu web arayüzü
 
+## Teknolojiler
+- Java 17
+- Spring Boot 3.2.3
+- PostgreSQL 42.7.2
+- Maven
+
+## Kurulum Adımları
+
+### 1. Ön Gereksinimler
 - Java 17 veya üzeri
-- Maven 3.6 veya üzeri
-- PostgreSQL 14 veya üzeri
-- Free Currency API anahtarı (https://freecurrencyapi.com/)
+- Maven
+- PostgreSQL
 
-## Kurulum
+### 2. PostgreSQL Kurulumu ve Yapılandırma
 
-### PostgreSQL Kurulumu
+#### A. PostgreSQL Kurulumu:
+- Mac için: `brew install postgresql`
+- Windows için: https://www.postgresql.org/download/windows/
+- Linux için: `sudo apt-get install postgresql`
 
-1. PostgreSQL'i indirin ve kurun:
-   - Windows: https://www.postgresql.org/download/windows/
-   - macOS: `brew install postgresql`
-   - Linux: `sudo apt-get install postgresql`
+#### B. PostgreSQL Servisini Başlatma:
+- Mac için: `brew services start postgresql`
+- Windows için: Servisler uygulamasından "PostgreSQL" servisini başlatın
+- Linux için: `sudo service postgresql start`
 
-2. PostgreSQL servisini başlatın:
-   - Windows: Otomatik başlar
-   - macOS: `brew services start postgresql`
-   - Linux: `sudo service postgresql start`
-
-3. Veritabanını oluşturun:
-```bash
-# PostgreSQL komut satırına girin
-psql -U postgres
-
-# Veritabanını oluşturun
+#### C. Veritabanı ve Kullanıcı Oluşturma:
+```sql
+CREATE USER myuser WITH PASSWORD 'mypassword';
 CREATE DATABASE portfolio_db;
-
-# Veritabanı oluşturulduğunu kontrol edin
-\l
-
-# Çıkış yapın
-\q
+GRANT ALL PRIVILEGES ON DATABASE portfolio_db TO myuser;
 ```
 
-### API Anahtarı Alma
-
-1. Free Currency API için:
-   - https://freecurrencyapi.com/ adresine gidin
-   - Ücretsiz hesap oluşturun
-   - API anahtarınızı alın (günlük 5000 istek hakkı)
-
-### Projeyi Klonlama ve Yapılandırma
+### 3. Uygulama Kurulumu
 
 1. Projeyi klonlayın:
 ```bash
-git clone https://github.com/HelixF1/FinanceProject.git
-cd FinanceProject
+git clone [repo-url]
+cd demo
 ```
 
-2. `src/main/resources/application.yml` dosyasını düzenleyin:
+2. `application.yml` dosyasını düzenleyin:
 ```yaml
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/portfolio_db
-    username: postgres  # PostgreSQL kullanıcı adınız
-    password: password # PostgreSQL şifreniz
+    username: myuser       # Kullanıcı oluştururken yazdığınız username
+    password: mypassword   # Kullanıcı oluşturuken yazdığınız password
 
 api:
   currency:
-    api-key: your_currency_api_key
+    api-key: [freecurrencyapi-key]  # FreeCurrencyAPI'den alacağınız key
 ```
 
-## Çalıştırma
+3. FreeCurrencyAPI Kurulumu:
+   - https://app.freecurrencyapi.com/dashboard adresine gidin
+   - Ücretsiz hesap oluşturun
+   - Dashboard'dan API key'inizi alın
 
-### Terminal ile Çalıştırma
-
-1. Projeyi derleyin:
+4. Uygulamayı başlatın:
 ```bash
-mvn clean install -DskipTests
-```
-
-2. Uygulamayı başlatın:
-```bash
+mvn clean install
 mvn spring-boot:run
 ```
 
-### IDE ile Çalıştırma (IntelliJ IDEA, Eclipse, VS Code)
-
-1. Projeyi IDE'nizde açın
-2. `DemoApplication.java` dosyasını bulun (`src/main/java/com/example/demo/DemoApplication.java`)
-3. Dosyayı açın ve "Run" (Çalıştır) butonuna tıklayın
-   - IntelliJ IDEA: Sol taraftaki yeşil "Run" butonu veya `Shift + F10`
-   - Eclipse: "Run As > Spring Boot App" seçeneği
-   - VS Code: "Run and Debug" sekmesinden "Run" butonu
-
-4. Uygulama başladıktan sonra tarayıcınızda `http://localhost:8080` adresine gidin
-
 ## API Endpoints
 
-### Portföy İşlemleri
+### Portfolio İşlemleri
+- `POST /api/portfolio/create` - Yeni portfolio oluşturma
+- `POST /api/portfolio/add-stock` - Portfolio'ya hisse ekleme
+- `GET /api/portfolio/history` - Portfolio geçmişini görüntüleme
+- `DELETE /api/portfolio/delete` - Portfolio silme
 
-1. Portföy Oluşturma:
-```bash
-curl -X POST "http://localhost:8080/api/portfolio/create?userId=user123"
-```
-
-2. Portföye Hisse Senedi Ekleme:
-```bash
-curl -X POST "http://localhost:8080/api/portfolio/add-stock?userId=user123&symbol=AAPL&quantity=5&currency=USD"
-```
-
-3. Portföy Geçmişi Görüntüleme:
-```bash
-curl "http://localhost:8080/api/portfolio/history?userId=user123"
-```
-
-### Hisse Senedi Fiyatı Sorgulama
-
-```bash
-curl "http://localhost:8080/api/finance/stock-price?symbol=AAPL&currency=USD&date=2024-03-03"
-```
-
-## Veritabanı Şeması
-
-Uygulama Flyway ile otomatik olarak aşağıdaki tabloları oluşturur:
-- `portfolios`: Kullanıcı portföylerini tutar
-- `portfolio_stocks`: Portföylerdeki hisse senetlerini tutar
-- `stock_history`: Hisse senedi fiyat geçmişini tutar
+### Finans İşlemleri
+- `GET /api/finance/stock-price` - Hisse fiyatı sorgulama
+- `GET /api/finance/exchange-rate` - Döviz kuru sorgulama
+- `POST /api/finance/bulk-stock-prices` - Toplu hisse fiyatı sorgulama
 
 ## Test
-
-Uygulamayı test etmek için:
 ```bash
 mvn test
 ```
 
-## Teknolojiler
-
-- Spring Boot 3.2.3
-- Spring Data JPA
-- PostgreSQL 14+
-- Maven
-- Flyway (Database migration)
-- Yahoo Finance API
-- Free Currency API
+## Uygulama Kullanımı
+1. `http://localhost:8080` adresine gidin
+2. Portfolio oluşturmak için kullanıcı ID girin
+3. Hisse senetleri ekleyin ve takip edin
+4. Portfolio geçmişini görüntüleyin

@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.model.StockRequest;
+import com.example.demo.dto.StockRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -48,8 +48,16 @@ public class FinanceService {
                 
             JsonNode json = objectMapper.readTree(response);
             
-            if (!json.has("chart") || !json.get("chart").has("result")) {
-                throw new RuntimeException("API yanıtı geçersiz format içeriyor");
+            if (!json.has("chart") || 
+                !json.get("chart").has("result") || 
+                json.get("chart").get("result").size() == 0 ||
+                !json.get("chart").get("result").get(0).has("indicators") ||
+                !json.get("chart").get("result").get(0).get("indicators").has("quote") ||
+                json.get("chart").get("result").get(0).get("indicators").get("quote").size() == 0 ||
+                !json.get("chart").get("result").get(0).get("indicators").get("quote").get(0).has("close") ||
+                json.get("chart").get("result").get(0).get("indicators").get("quote").get(0).get("close").size() == 0) {
+                
+                throw new IllegalArgumentException("Geçersiz API yanıtı formatı");
             }
             
             JsonNode result = json.get("chart").get("result").get(0);
@@ -65,7 +73,7 @@ public class FinanceService {
             
         } catch (Exception e) {
             logger.error("Error getting stock price: {}", e.getMessage());
-            throw new RuntimeException("Hisse fiyatı alınamadı: " + e.getMessage());
+            throw new IllegalArgumentException("Hisse fiyatı alınamadı: " + e.getMessage());
         }
     }
     
@@ -94,7 +102,7 @@ public class FinanceService {
             
         } catch (Exception e) {
             logger.error("Error getting exchange rate: {}", e.getMessage());
-            throw new RuntimeException("Döviz kuru alınamadı: " + e.getMessage());
+            throw new IllegalArgumentException("Döviz kuru alınamadı: " + e.getMessage());
         }
     }
 

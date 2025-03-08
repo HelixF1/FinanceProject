@@ -5,6 +5,7 @@ import com.example.demo.model.Portfolio;
 import com.example.demo.service.PortfolioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
@@ -19,16 +20,22 @@ public class PortfolioController {
     private PortfolioService portfolioService;
     
     @PostMapping("/create")
+    @ResponseStatus(HttpStatus.CREATED)
     public Portfolio createPortfolio(@RequestParam String userId) {
         return portfolioService.createPortfolio(userId);
     }
     
     @PostMapping("/add-stock")
-    public void addStock(
+    public ResponseEntity<?> addStock(
             @RequestParam String userId,
             @RequestParam String symbol,
             @RequestParam int quantity) {
-        portfolioService.addStockToPortfolio(userId, symbol, quantity);
+        try {
+            portfolioService.addStockToPortfolio(userId, symbol, quantity);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     
     @GetMapping("/history")
@@ -48,8 +55,13 @@ public class PortfolioController {
     }
     
     @PostMapping("/update-prices")
-    public void updatePrices() {
-        portfolioService.scheduledPriceUpdate();
+    public ResponseEntity<?> updatePrices() {
+        try {
+            portfolioService.scheduledPriceUpdate();
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     
     @GetMapping("/user-stocks")

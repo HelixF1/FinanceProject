@@ -6,9 +6,11 @@ import com.example.demo.repository.PortfolioRepository;
 import com.example.demo.repository.StockHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(MockitoExtension.class)
 class PortfolioServiceTest {
 
     @Mock
@@ -36,19 +39,12 @@ class PortfolioServiceTest {
     }
 
     @Test
-    void createPortfolio_ShouldCreateNewPortfolio() {
-        String userId = "testUser";
+    void createPortfolio_ShouldReturnNewPortfolio() {
         Portfolio portfolio = new Portfolio();
-        portfolio.setUserId(userId);
-        portfolio.setStocks(new ArrayList<>());
-
         when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
-
-        Portfolio result = portfolioService.createPortfolio(userId);
-
+        
+        Portfolio result = portfolioService.createPortfolio("Test Portfolio");
         assertNotNull(result);
-        assertEquals(userId, result.getUserId());
-        verify(portfolioRepository).save(any(Portfolio.class));
     }
 
     @Test

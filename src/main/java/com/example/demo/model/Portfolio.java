@@ -1,11 +1,18 @@
 package com.example.demo.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import jakarta.persistence.*;
 import java.util.List;
 import java.util.ArrayList;
 
 @Entity
 @Table(name = "portfolios")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Portfolio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,6 +23,12 @@ public class Portfolio {
     
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PortfolioStock> stocks = new ArrayList<>();
+
+    private String name;
+
+    public Portfolio(String name) {
+        this.name = name;
+    }
 
     // Getters and Setters
     public Long getId() {

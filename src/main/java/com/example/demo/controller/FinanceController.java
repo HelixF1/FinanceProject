@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.StockRequest;
+import com.example.demo.dto.StockRequest;
 import com.example.demo.service.FinanceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,11 +62,12 @@ public class FinanceController {
             logger.info("Executing operation: {}", operationName);
             T result = operation.get();
             return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            logger.error("Validation error in {}: ", operationName, e);
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error in {}: ", operationName, e);
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
 }
