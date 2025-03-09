@@ -14,7 +14,6 @@ public class StockHistory {
     private Double price;
     private LocalDate date;
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

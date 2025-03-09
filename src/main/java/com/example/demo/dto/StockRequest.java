@@ -14,7 +14,6 @@ public class StockRequest {
     private String currency;
     private LocalDate date;
 
-    // Getters and Setters
     public List<String> getSymbols() {
         return symbols;
     }

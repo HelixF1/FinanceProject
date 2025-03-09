@@ -23,7 +23,7 @@ public class FinanceController {
     @Autowired
     private FinanceService financeService;
 
-    // Döviz kuru endpoint'i
+    
     @GetMapping("/exchange-rate")
     public ResponseEntity<?> getExchangeRate(
             @RequestParam String fromCurrency,
@@ -32,7 +32,6 @@ public class FinanceController {
         return executeFinanceOperation("getExchangeRate", () -> financeService.getExchangeRate(fromCurrency, toCurrency, date));
     }
 
-    // Tek hisse senedi fiyatı endpoint'i
     @GetMapping("/stock-price")
     public ResponseEntity<?> getStockPrice(
             @RequestParam String symbol,
@@ -42,7 +41,6 @@ public class FinanceController {
             () -> financeService.getStockPrice(symbol, currency, date));
     }
 
-    // Toplu hisse senedi fiyatı endpoint'i
     @PostMapping("/bulk-stock-prices")
     public ResponseEntity<?> getBulkStockPrices(@RequestBody StockRequest request) {
         return executeFinanceOperation("getBulkStockPrices", 

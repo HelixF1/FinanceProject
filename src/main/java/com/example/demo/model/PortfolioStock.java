@@ -16,7 +16,6 @@ public class PortfolioStock {
     @JoinColumn(name = "portfolio_id")
     private Portfolio portfolio;
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

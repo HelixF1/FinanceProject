@@ -43,23 +43,19 @@ class PortfolioControllerTest {
     
     @Test
     void createPortfolio_ShouldReturnNewPortfolio() {
-        // Given
         String userId = "testUser";
         Portfolio expectedPortfolio = new Portfolio();
         expectedPortfolio.setUserId(userId);
         when(portfolioService.createPortfolio(userId)).thenReturn(expectedPortfolio);
         
-        // When
         Portfolio result = portfolioController.createPortfolio(userId);
         
-        // Then
         assertNotNull(result);
         assertEquals(userId, result.getUserId());
     }
     
     @Test
     void getHistory_ShouldReturnPortfolioHistory() {
-        // Given
         String userId = "testUser";
         LocalDate startDate = LocalDate.now().minusDays(7);
         LocalDate endDate = LocalDate.now();
@@ -76,10 +72,8 @@ class PortfolioControllerTest {
         when(portfolioService.getPortfolioHistory(userId, startDate, endDate))
             .thenReturn(expectedHistory);
             
-        // When
         List<Map<String, Object>> result = portfolioController.getHistory(userId, startDate, endDate);
         
-        // Then
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(expectedHistory.size(), result.size());
@@ -89,7 +83,6 @@ class PortfolioControllerTest {
     
     @Test
     void getUserStocks_ShouldReturnStockList() {
-        // Given
         String userId = "testUser";
         Portfolio portfolio = new Portfolio();
         PortfolioStock stock = new PortfolioStock();
@@ -98,10 +91,8 @@ class PortfolioControllerTest {
         
         when(portfolioService.findPortfolioByUserId(userId)).thenReturn(portfolio);
         
-        // When
         List<String> result = portfolioController.getUserStocks(userId);
         
-        // Then
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals("AAPL", result.get(0));
@@ -109,30 +100,24 @@ class PortfolioControllerTest {
     
     @Test
     void deletePortfolio_ShouldReturnSuccessMessage() {
-        // Given
         String userId = "testUser";
         doNothing().when(portfolioService).deletePortfolio(userId);
         
-        // When
         ResponseEntity<?> response = portfolioController.deletePortfolio(userId);
         
-        // Then
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("Portfolio başarıyla silindi", response.getBody());
     }
     
     @Test
     void deletePortfolio_WhenError_ShouldReturnErrorMessage() {
-        // Given
         String userId = "nonExistentUser";
         String errorMessage = "Portfolio bulunamadı";
         doThrow(new RuntimeException(errorMessage))
             .when(portfolioService).deletePortfolio(userId);
         
-        // When
         ResponseEntity<?> response = portfolioController.deletePortfolio(userId);
         
-        // Then
         assertTrue(response.getStatusCode().is4xxClientError());
         assertEquals(errorMessage, response.getBody());
     }

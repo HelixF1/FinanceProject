@@ -30,7 +30,6 @@ public class PortfolioService {
     @Autowired
     private FinanceService financeService;
 
-    // Portfolio oluşturma
     public Portfolio createPortfolio(String userId) {
         Portfolio portfolio = new Portfolio();
         portfolio.setUserId(userId);
@@ -38,11 +37,9 @@ public class PortfolioService {
         return portfolioRepository.save(portfolio);
     }
 
-    // Portfolyoya hisse ekleme
     public void addStockToPortfolio(String userId, String symbol, int quantity) {
         Portfolio portfolio = findPortfolioByUserId(userId);
         
-        // Eğer hisse zaten varsa miktarını güncelle
         Optional<PortfolioStock> existingStock = portfolio.getStocks().stream()
             .filter(s -> s.getSymbol().equals(symbol))
             .findFirst();
@@ -50,7 +47,6 @@ public class PortfolioService {
         if (existingStock.isPresent()) {
             existingStock.get().setQuantity(existingStock.get().getQuantity() + quantity);
         } else {
-            // Yeni hisse ekle
             PortfolioStock newStock = new PortfolioStock();
             newStock.setSymbol(symbol);
             newStock.setQuantity(quantity);
@@ -60,11 +56,9 @@ public class PortfolioService {
         
         portfolioRepository.save(portfolio);
         
-        // Hisse eklendiğinde ilk fiyat kaydını al
         updateSingleStockPrice(symbol);
     }
 
-    // Belirli bir hissenin fiyatını güncelle
     private void updateSingleStockPrice(String symbol) {
         try {
             LocalDate today = LocalDate.now();
@@ -82,7 +76,6 @@ public class PortfolioService {
         }
     }
 
-    // Her gün saat 18:00'de çalışacak otomatik güncelleme
     @Scheduled(cron = "0 0 18 * * *")
     public void scheduledPriceUpdate() {
         logger.info("Starting scheduled price update for all stocks");
@@ -101,13 +94,11 @@ public class PortfolioService {
         }
     }
 
-    // Portfolyo bulma yardımcı metodu
     public Portfolio findPortfolioByUserId(String userId) {
         return portfolioRepository.findFirstByUserId(userId)
             .orElseThrow(() -> new RuntimeException("Portfolio not found for user: " + userId));
     }
 
-    // Portfolyo geçmişini getir
     public List<Map<String, Object>> getPortfolioHistory(String userId, LocalDate startDate, LocalDate endDate) {
         try {
             Portfolio portfolio = findPortfolioByUserId(userId);
@@ -143,7 +134,6 @@ public class PortfolioService {
         }
     }
 
-    // Portfolyonun toplam değerini hesapla
     public Map<LocalDate, Double> getPortfolioTotalValue(String userId, LocalDate startDate, LocalDate endDate) {
         Portfolio portfolio = findPortfolioByUserId(userId);
         List<String> symbols = portfolio.getStocks().stream()

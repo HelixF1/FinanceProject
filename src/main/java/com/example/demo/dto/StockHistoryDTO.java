@@ -17,7 +17,6 @@ public class StockHistoryDTO {
         this.totalValue = totalValue;
     }
 
-    // Getters
     public LocalDate getDate() { return date; }
     public String getSymbol() { return symbol; }
     public double getPrice() { return price; }

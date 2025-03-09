@@ -15,7 +15,6 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
-# API Configurations
 api:
   yahoo-finance:
     base-url: https://query1.finance.yahoo.com/v8/finance/chart
