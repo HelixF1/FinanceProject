@@ -30,15 +30,42 @@ Bu uygulama, kullanıcıların hisse senedi portfolyolarını yönetmelerini ve 
 - Linux için: `sudo apt-get install postgresql`
 
 #### B. PostgreSQL Servisini Başlatma:
-- Mac için: `brew services start postgresql`
+- Mac için: 
+```bash
+brew services start postgresql
+```
 - Windows için: Servisler uygulamasından "PostgreSQL" servisini başlatın
-- Linux için: `sudo service postgresql start`
+- Linux için: 
+```bash
+sudo service postgresql start
+```
 
 #### C. Veritabanı ve Kullanıcı Oluşturma:
+1. PostgreSQL'e bağlanın:
+- Mac için:
+```bash
+psql postgres
+```
+- Windows için:
+```bash
+psql -U postgres
+```
+- Linux için:
+```bash
+sudo -u postgres psql
+```
+
+2. Aşağıdaki SQL komutlarını sırasıyla çalıştırın:
 ```sql
 CREATE USER myuser WITH PASSWORD 'mypassword';
 CREATE DATABASE portfolio_db;
 GRANT ALL PRIVILEGES ON DATABASE portfolio_db TO myuser;
+```
+
+3. PostgreSQL konsolundan çıkmak için:
+```bash
+\q
+```
 ```
 
 ### 3. Uygulama Kurulumu
