@@ -66,7 +66,6 @@ GRANT ALL PRIVILEGES ON DATABASE portfolio_db TO myuser;
 ```bash
 \q
 ```
-```
 
 ### 3. Uygulama Kurulumu
 
