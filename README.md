@@ -1,99 +1,99 @@
-# Portfolio Takip Uygulaması
+# Portfolio Tracking Application
 
-## Proje Hakkında
-Bu uygulama, kullanıcıların hisse senedi portfolyolarını yönetmelerini ve takip etmelerini sağlayan bir Spring Boot uygulamasıdır.
+## About the Project
+This is a Spring Boot application that allows users to manage and track their stock portfolios.
 
-## Özellikler
-- 📈 Hisse senedi fiyatlarını gerçek zamanlı takip (Yahoo Finance)
-- 💱 Döviz kuru çevirisi (FreeCurrencyAPI)
-- 📊 Portfolio yönetimi ve geçmiş takibi
-- 📱 Kullanıcı dostu web arayüzü
+## Features
+- 📈 Real-time stock price tracking (Yahoo Finance)
+- 💱 Currency conversion (FreeCurrencyAPI)
+- 📊 Portfolio management and history tracking
+- 📱 User-friendly web interface
 
-## Teknolojiler
+## Technologies
 - Java 17
 - Spring Boot 3.2.3
 - PostgreSQL 42.7.2
 - Maven
 
-## Kurulum Adımları
+## Installation Steps
 
-### 1. Ön Gereksinimler
-- Java 17 veya üzeri
+### 1. Prerequisites
+- Java 17 or higher
 - Maven
 - PostgreSQL
 
-### 2. PostgreSQL Kurulumu ve Yapılandırma
+### 2. PostgreSQL Installation and Configuration
 
-#### A. PostgreSQL Kurulumu:
-- Mac için: `brew install postgresql`
-- Windows için: https://www.postgresql.org/download/windows/
-- Linux için: `sudo apt-get install postgresql`
+#### A. PostgreSQL Installation:
+- For Mac: `brew install postgresql`
+- For Windows: https://www.postgresql.org/download/windows/
+- For Linux: `sudo apt-get install postgresql`
 
-#### B. PostgreSQL Servisini Başlatma:
-- Mac için: 
+#### B. Starting PostgreSQL Service:
+- For Mac: 
 ```bash
 brew services start postgresql
 ```
-- Windows için: Servisler uygulamasından "PostgreSQL" servisini başlatın
-- Linux için: 
+- For Windows: Start "PostgreSQL" service from Services application
+- For Linux: 
 ```bash
 sudo service postgresql start
 ```
 
-#### C. Veritabanı ve Kullanıcı Oluşturma:
-1. PostgreSQL'e bağlanın:
-- Mac için:
+#### C. Creating Database and User:
+1. Connect to PostgreSQL:
+- For Mac:
 ```bash
 psql postgres
 ```
-- Windows için:
+- For Windows:
 ```bash
 psql -U postgres
 ```
-- Linux için:
+- For Linux:
 ```bash
 sudo -u postgres psql
 ```
 
-2. Aşağıdaki SQL komutlarını sırasıyla çalıştırın:
+2. Execute the following SQL commands in order:
 ```sql
 CREATE USER myuser WITH PASSWORD 'mypassword';
 CREATE DATABASE portfolio_db;
 GRANT ALL PRIVILEGES ON DATABASE portfolio_db TO myuser;
 ```
 
-3. PostgreSQL konsolundan çıkmak için:
+3. To exit PostgreSQL console:
 ```bash
 \q
 ```
 
-### 3. Uygulama Kurulumu
+### 3. Application Installation
 
-1. Projeyi klonlayın:
+1. Clone the project:
 ```bash
 git clone [repo-url]
 cd demo
 ```
 
-2. `application.yml` dosyasını düzenleyin:
+2. Edit `application.yml` file:
 ```yaml
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/portfolio_db
-    username: myuser       # Kullanıcı oluştururken yazdığınız username
-    password: mypassword   # Kullanıcı oluşturuken yazdığınız password
+    username: myuser       # Username you created
+    password: mypassword   # Password you created
 
 api:
   currency:
-    api-key: [freecurrencyapi-key]  # FreeCurrencyAPI'den alacağınız key
+    api-key: [freecurrencyapi-key]  # Key from FreeCurrencyAPI
 ```
 
-3. FreeCurrencyAPI Kurulumu:
-   - https://app.freecurrencyapi.com/dashboard adresine gidin
-   - Ücretsiz hesap oluşturun
-   - Dashboard'dan API key'inizi alın
+3. FreeCurrencyAPI Setup:
+   - Go to https://app.freecurrencyapi.com/dashboard
+   - Create a free account
+   - Get your API key from Dashboard
 
-4. Uygulamayı başlatın:
+4. Start the application:
 ```bash
 mvn clean install
 mvn spring-boot:run
@@ -101,24 +101,24 @@ mvn spring-boot:run
 
 ## API Endpoints
 
-### Portfolio İşlemleri
-- `POST /api/portfolio/create` - Yeni portfolio oluşturma
-- `POST /api/portfolio/add-stock` - Portfolio'ya hisse ekleme
-- `GET /api/portfolio/history` - Portfolio geçmişini görüntüleme
-- `DELETE /api/portfolio/delete` - Portfolio silme
+### Portfolio Operations
+- `POST /api/portfolio/create` - Create new portfolio
+- `POST /api/portfolio/add-stock` - Add stock to portfolio
+- `GET /api/portfolio/history` - View portfolio history
+- `DELETE /api/portfolio/delete` - Delete portfolio
 
-### Finans İşlemleri
-- `GET /api/finance/stock-price` - Hisse fiyatı sorgulama
-- `GET /api/finance/exchange-rate` - Döviz kuru sorgulama
-- `POST /api/finance/bulk-stock-prices` - Toplu hisse fiyatı sorgulama
+### Finance Operations
+- `GET /api/finance/stock-price` - Query stock price
+- `GET /api/finance/exchange-rate` - Query exchange rate
+- `POST /api/finance/bulk-stock-prices` - Query bulk stock prices
 
-## Test
+## Testing
 ```bash
 mvn test
 ```
 
-## Uygulama Kullanımı
-1. `http://localhost:8080` adresine gidin
-2. Portfolio oluşturmak için kullanıcı ID girin
-3. Hisse senetleri ekleyin ve takip edin
-4. Portfolio geçmişini görüntüleyin
+## Using the Application
+1. Go to `http://localhost:8080`
+2. Enter user ID to create portfolio
+3. Add and track stocks
+4. View portfolio history
